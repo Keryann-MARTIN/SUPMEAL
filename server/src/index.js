@@ -2,6 +2,8 @@ const express = require("express")
 const cors = require("cors")
 require("dotenv").config()
 
+const prisma = require("./prisma")
+
 const app = express()
 const port = process.env.PORT || 3000
 
@@ -10,6 +12,22 @@ app.use(express.json())
 
 app.get("/", (req, res) => {
     res.json({ message: "API SUPMEAL" })
+})
+
+app.get("/health", async (req, res) => {
+    try {
+        await prisma.user.count()
+
+        res.json({
+            api: "ok",
+            database: "ok"
+        })
+    } catch {
+        res.status(500).json({
+            api: "ok",
+            database: "error"
+        })
+    }
 })
 
 app.listen(port, () => {
