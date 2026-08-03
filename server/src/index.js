@@ -3,12 +3,15 @@ const cors = require("cors")
 require("dotenv").config()
 
 const prisma = require("./prisma")
+const authRoutes = require("./routes/auth")
 
 const app = express()
 const port = process.env.PORT || 3000
 
 app.use(cors())
 app.use(express.json())
+
+app.use("/auth", authRoutes)
 
 app.get("/", (req, res) => {
     res.json({ message: "API SUPMEAL" })

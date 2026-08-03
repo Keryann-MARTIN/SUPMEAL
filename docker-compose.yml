@@ -19,6 +19,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@database:5432/${POSTGRES_DB}
       JWT_SECRET: ${JWT_SECRET}
     volumes:
+      - ./server/src:/app/src
       - ./server/prisma:/app/prisma
     depends_on:
       - database
