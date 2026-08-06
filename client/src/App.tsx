@@ -1,31 +1,19 @@
-import { useEffect, useState } from "react"
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom"
+import Home from "./pages/Home"
+import Login from "./pages/Login"
+import Register from "./pages/Register"
 import "./App.css"
 
 function App() {
-  const [message, setMessage] = useState("Connexion à l'API...")
-
-  useEffect(() => {
-    fetch("http://localhost:3000")
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Erreur API")
-        }
-
-        return response.json()
-      })
-      .then((data: { message: string }) => {
-        setMessage(data.message)
-      })
-      .catch(() => {
-        setMessage("Impossible de contacter l'API")
-      })
-  }, [])
-
   return (
-    <main className="container">
-      <h1>SUPMEAL</h1>
-      <p>{message}</p>
-    </main>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="*" element={<Navigate to="/" />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
 
