@@ -39,8 +39,16 @@ function Recipes() {
     const [cookbookId, setCookbookId] = useState("")
     const [message, setMessage] = useState("")
 
-    async function loadRecipes(token: string) {
-        const response = await fetch("http://localhost:3000/recipes", {
+    const [search, setSearch] = useState("")
+    const [filterCookbook, setFilterCookbook] = useState("")
+    const [filterTag, setFilterTag] = useState("")
+    const [filterIngredient, setFilterIngredient] = useState("")
+    const [maxPrepTime, setMaxPrepTime] = useState("")
+    const [maxCookTime, setMaxCookTime] = useState("")
+    const [favoriteOnly, setFavoriteOnly] = useState(false)
+
+    async function loadRecipes(token: string, query = "") {
+        const response = await fetch(`http://localhost:3000/recipes${query}`, {
             headers: {
                 Authorization: `Bearer ${token}`
             }
@@ -52,6 +60,71 @@ function Recipes() {
 
         const data = await response.json()
         setRecipes(data)
+    }
+
+    function getFilterQuery() {
+        const params = new URLSearchParams()
+
+        if (search.trim()) {
+            params.set("search", search.trim())
+        }
+
+        if (filterCookbook) {
+            params.set("cookbookId", filterCookbook)
+        }
+
+        if (filterTag.trim()) {
+            params.set("tag", filterTag.trim())
+        }
+
+        if (filterIngredient.trim()) {
+            params.set("ingredient", filterIngredient.trim())
+        }
+
+        if (maxPrepTime) {
+            params.set("maxPrepTime", maxPrepTime)
+        }
+
+        if (maxCookTime) {
+            params.set("maxCookTime", maxCookTime)
+        }
+
+        if (favoriteOnly) {
+            params.set("favorite", "true")
+        }
+
+        const query = params.toString()
+
+        return query ? `?${query}` : ""
+    }
+
+    async function handleFilters(event: SyntheticEvent<HTMLFormElement>) {
+        event.preventDefault()
+
+        const token = localStorage.getItem("token")
+
+        if (!token) {
+            navigate("/login")
+            return
+        }
+
+        await loadRecipes(token, getFilterQuery())
+    }
+
+    async function resetFilters() {
+        setSearch("")
+        setFilterCookbook("")
+        setFilterTag("")
+        setFilterIngredient("")
+        setMaxPrepTime("")
+        setMaxCookTime("")
+        setFavoriteOnly(false)
+
+        const token = localStorage.getItem("token")
+
+        if (token) {
+            await loadRecipes(token)
+        }
     }
 
     async function updateRecipe(
@@ -292,6 +365,80 @@ function Recipes() {
 
                 <section className="panel">
                     <h2>Mes recettes</h2>
+
+                    <form className="recipe-filters" onSubmit={handleFilters}>
+                        <input
+                            type="text"
+                            placeholder="Rechercher..."
+                            value={search}
+                            onChange={(event) => setSearch(event.target.value)}
+                        />
+
+                        <select
+                            value={filterCookbook}
+                            onChange={(event) => setFilterCookbook(event.target.value)}
+                        >
+                            <option value="">Tous les cookbooks</option>
+                            <option value="personal">Recettes personnelles</option>
+
+                            {cookbooks.map((cookbook) => (
+                                <option key={cookbook.id} value={cookbook.id}>
+                                    {cookbook.name}
+                                </option>
+                            ))}
+                        </select>
+
+                        <input
+                            type="text"
+                            placeholder="Tag"
+                            value={filterTag}
+                            onChange={(event) => setFilterTag(event.target.value)}
+                        />
+
+                        <input
+                            type="text"
+                            placeholder="Ingrédient"
+                            value={filterIngredient}
+                            onChange={(event) => setFilterIngredient(event.target.value)}
+                        />
+
+                        <input
+                            type="number"
+                            min="0"
+                            placeholder="Préparation max (min)"
+                            value={maxPrepTime}
+                            onChange={(event) => setMaxPrepTime(event.target.value)}
+                        />
+
+                        <input
+                            type="number"
+                            min="0"
+                            placeholder="Cuisson max (min)"
+                            value={maxCookTime}
+                            onChange={(event) => setMaxCookTime(event.target.value)}
+                        />
+
+                        <label className="favorite-filter">
+                            <input
+                                type="checkbox"
+                                checked={favoriteOnly}
+                                onChange={(event) => setFavoriteOnly(event.target.checked)}
+                            />
+                            Favoris uniquement
+                        </label>
+
+                        <div className="filter-buttons">
+                            <button type="submit">Filtrer</button>
+
+                            <button
+                                type="button"
+                                className="secondary-button"
+                                onClick={resetFilters}
+                            >
+                                Réinitialiser
+                            </button>
+                        </div>
+                    </form>
 
                     {recipes.length === 0 ? (
                         <p>Aucune recette pour le moment.</p>

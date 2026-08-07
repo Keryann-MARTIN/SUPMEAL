@@ -67,8 +67,18 @@ router.post("/", auth, async (req, res) => {
 
 router.get("/", auth, async (req, res) => {
     try {
-        const recipes = await prisma.recipe.findMany({
-            where: {
+        const {
+            search,
+            cookbookId,
+            tag,
+            ingredient,
+            maxPrepTime,
+            maxCookTime,
+            favorite
+        } = req.query
+
+        const conditions = [
+            {
                 OR: [
                     {
                         userId: req.userId,
@@ -84,6 +94,45 @@ router.get("/", auth, async (req, res) => {
                         }
                     }
                 ]
+            }
+        ]
+
+        if (cookbookId === "personal") {
+            conditions.push({
+                userId: req.userId,
+                cookbookId: null
+            })
+        } else if (cookbookId) {
+            conditions.push({
+                cookbookId: Number(cookbookId)
+            })
+        }
+
+        if (favorite === "true") {
+            conditions.push({
+                favorite: true
+            })
+        }
+
+        if (maxPrepTime) {
+            conditions.push({
+                prepTime: {
+                    lte: Number(maxPrepTime)
+                }
+            })
+        }
+
+        if (maxCookTime) {
+            conditions.push({
+                cookTime: {
+                    lte: Number(maxCookTime)
+                }
+            })
+        }
+
+        const recipes = await prisma.recipe.findMany({
+            where: {
+                AND: conditions
             },
             include: {
                 cookbook: {
@@ -98,7 +147,48 @@ router.get("/", auth, async (req, res) => {
             }
         })
 
-        res.json(recipes)
+        let result = recipes
+
+        if (tag) {
+            const value = tag.toLowerCase()
+
+            result = result.filter((recipe) =>
+                recipe.tags.some((recipeTag) =>
+                    recipeTag.toLowerCase().includes(value)
+                )
+            )
+        }
+
+        if (ingredient) {
+            const value = ingredient.toLowerCase()
+
+            result = result.filter((recipe) =>
+                recipe.ingredients.some((recipeIngredient) =>
+                    recipeIngredient.toLowerCase().includes(value)
+                )
+            )
+        }
+
+        if (search) {
+            const value = search.toLowerCase()
+
+            result = result.filter((recipe) => {
+                const content = [
+                    recipe.title,
+                    recipe.source || "",
+                    recipe.cookbook?.name || "",
+                    ...recipe.ingredients,
+                    ...recipe.steps,
+                    ...recipe.tags
+                ]
+                    .join(" ")
+                    .toLowerCase()
+
+                return content.includes(value)
+            })
+        }
+
+        res.json(result)
     } catch {
         res.status(500).json({
             message: "Erreur lors de la récupération des recettes"

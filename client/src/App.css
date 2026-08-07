@@ -251,3 +251,40 @@ button {
     flex-direction: column;
   }
 }
+
+.recipe-filters {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #dddddd;
+}
+
+.recipe-filters input,
+.recipe-filters select {
+  padding: 9px;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+}
+
+.favorite-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.secondary-button {
+  background: #666666;
+}
+
+@media (max-width: 900px) {
+  .recipe-filters {
+    grid-template-columns: 1fr;
+  }
+}
