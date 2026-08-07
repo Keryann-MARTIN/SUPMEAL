@@ -7,11 +7,40 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum CookbookRole {
+  OWNER
+  EDITOR
+  READER
+  COMMENTATOR
+}
+
 model User {
-  id           Int      @id @default(autoincrement())
-  name         String
-  email        String   @unique
-  passwordHash String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                  Int              @id @default(autoincrement())
+  name                String
+  email               String           @unique
+  passwordHash        String
+  cookbookMemberships CookbookMember[]
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+}
+
+model Cookbook {
+  id          Int              @id @default(autoincrement())
+  name        String
+  description String?
+  members     CookbookMember[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model CookbookMember {
+  id         Int          @id @default(autoincrement())
+  role       CookbookRole @default(READER)
+  userId     Int
+  cookbookId Int
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cookbook   Cookbook     @relation(fields: [cookbookId], references: [id], onDelete: Cascade)
+  createdAt  DateTime     @default(now())
+
+  @@unique([userId, cookbookId])
 }

@@ -4,6 +4,7 @@ require("dotenv").config()
 
 const prisma = require("./prisma")
 const authRoutes = require("./routes/auth")
+const cookbookRoutes = require("./routes/cookbooks")
 
 const app = express()
 const port = process.env.PORT || 3000
@@ -12,6 +13,7 @@ app.use(cors())
 app.use(express.json())
 
 app.use("/auth", authRoutes)
+app.use("/cookbooks", cookbookRoutes)
 
 app.get("/", (req, res) => {
     res.json({ message: "API SUPMEAL" })
