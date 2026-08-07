@@ -136,3 +136,88 @@ button {
     gap: 20px;
   }
 }
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.button-link {
+  padding: 10px 16px;
+  border-radius: 4px;
+  background: #2f855a;
+  color: white;
+  text-decoration: none;
+}
+
+.recipes-page {
+  min-height: 100vh;
+  padding: 30px;
+}
+
+.page-header {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto 30px;
+}
+
+.page-header h1 {
+  margin-bottom: 8px;
+}
+
+.recipes-layout {
+  width: 100%;
+  max-width: 1200px;
+  margin: auto;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 20px;
+}
+
+.recipe-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.recipe-form input,
+.recipe-form textarea,
+.recipe-form select {
+  padding: 10px;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+}
+
+.recipe-form textarea {
+  resize: vertical;
+}
+
+.recipe-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.recipe-card {
+  padding: 20px;
+  border: 1px solid #dddddd;
+  border-radius: 6px;
+}
+
+.recipe-card h3 {
+  margin-top: 0;
+}
+
+.recipe-card h4 {
+  margin-bottom: 6px;
+}
+
+.recipe-card li {
+  margin-bottom: 4px;
+}
+
+@media (max-width: 800px) {
+  .recipes-layout {
+    grid-template-columns: 1fr;
+  }
+}

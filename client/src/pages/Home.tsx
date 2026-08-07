@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import type { SyntheticEvent } from "react"
-import { useNavigate } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 
 type User = {
     id: number
@@ -131,7 +131,13 @@ function Home() {
                     <p>Bienvenue {user.name}</p>
                 </div>
 
-                <button onClick={logout}>Se déconnecter</button>
+                <div className="header-actions">
+                    <Link className="button-link" to="/recipes">
+                        Recettes
+                    </Link>
+
+                    <button onClick={logout}>Se déconnecter</button>
+                </div>
             </header>
 
             <div className="dashboard">

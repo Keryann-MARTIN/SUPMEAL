@@ -20,6 +20,7 @@ model User {
   email               String           @unique
   passwordHash        String
   cookbookMemberships CookbookMember[]
+  recipes             Recipe[]
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
 }
@@ -29,6 +30,7 @@ model Cookbook {
   name        String
   description String?
   members     CookbookMember[]
+  recipes     Recipe[]
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 }
@@ -43,4 +45,25 @@ model CookbookMember {
   createdAt  DateTime     @default(now())
 
   @@unique([userId, cookbookId])
+}
+
+model Recipe {
+  id          Int       @id @default(autoincrement())
+  title       String
+  ingredients String[]
+  steps       String[]
+  prepTime    Int
+  cookTime    Int
+  servings    Int
+  tags        String[]
+  imageUrl    String?
+  source      String?
+  favorite    Boolean   @default(false)
+  plannedAt   DateTime?
+  userId      Int
+  cookbookId  Int?
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cookbook    Cookbook? @relation(fields: [cookbookId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
