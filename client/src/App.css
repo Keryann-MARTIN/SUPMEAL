@@ -2,13 +2,11 @@
   min-height: 100vh;
 }
 
-.auth-page,
-.home-page {
+.auth-page {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-direction: column;
 }
 
 .auth-form {
@@ -28,7 +26,9 @@
   text-align: center;
 }
 
-.auth-form input {
+.auth-form input,
+.cookbook-form input,
+.cookbook-form textarea {
   padding: 10px;
   border: 1px solid #cccccc;
   border-radius: 4px;
@@ -50,4 +50,89 @@ button {
 .loading {
   padding: 30px;
   text-align: center;
+}
+
+.home-page {
+  min-height: 100vh;
+  padding: 30px;
+}
+
+.home-header {
+  max-width: 1000px;
+  margin: 0 auto 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.home-header h1,
+.home-header p {
+  margin: 0;
+}
+
+.dashboard {
+  width: 100%;
+  max-width: 1000px;
+  margin: auto;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 20px;
+}
+
+.panel {
+  padding: 24px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.panel h2 {
+  margin-top: 0;
+}
+
+.cookbook-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cookbook-form textarea {
+  resize: vertical;
+}
+
+.cookbook-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cookbook-card {
+  padding: 16px;
+  border: 1px solid #dddddd;
+  border-radius: 6px;
+}
+
+.cookbook-card h3 {
+  margin: 0 0 8px;
+}
+
+.cookbook-card p {
+  margin: 0 0 12px;
+}
+
+.cookbook-card span {
+  font-size: 14px;
+  font-weight: bold;
+  color: #2f855a;
+}
+
+@media (max-width: 700px) {
+  .dashboard {
+    grid-template-columns: 1fr;
+  }
+
+  .home-header {
+    align-items: flex-start;
+    gap: 20px;
+  }
 }
