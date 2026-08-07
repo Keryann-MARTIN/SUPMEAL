@@ -17,6 +17,8 @@ type Recipe = {
     servings: number
     tags: string[]
     source: string | null
+    favorite: boolean
+    plannedAt: string | null
     cookbook: Cookbook | null
 }
 
@@ -50,6 +52,39 @@ function Recipes() {
 
         const data = await response.json()
         setRecipes(data)
+    }
+
+    async function updateRecipe(
+        recipeId: number,
+        data: {
+            favorite?: boolean
+            plannedAt?: string | null
+        }
+    ) {
+        const token = localStorage.getItem("token")
+
+        if (!token) {
+            navigate("/login")
+            return
+        }
+
+        const response = await fetch(`http://localhost:3000/recipes/${recipeId}`, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify(data)
+        })
+
+        const responseData = await response.json()
+
+        if (!response.ok) {
+            setMessage(responseData.message)
+            return
+        }
+
+        await loadRecipes(token)
     }
 
     useEffect(() => {
@@ -265,6 +300,35 @@ function Recipes() {
                             {recipes.map((recipe) => (
                                 <article className="recipe-card" key={recipe.id}>
                                     <h3>{recipe.title}</h3>
+
+                                    <div className="recipe-actions">
+                                        <button
+                                            type="button"
+                                            className="favorite-button"
+                                            onClick={() =>
+                                                updateRecipe(recipe.id, {
+                                                    favorite: !recipe.favorite
+                                                })
+                                            }
+                                        >
+                                            {recipe.favorite ? "★ Favori" : "☆ Ajouter aux favoris"}
+                                        </button>
+
+                                        <div className="planning">
+                                            <label htmlFor={`planning-${recipe.id}`}>Repas prévu</label>
+
+                                            <input
+                                                id={`planning-${recipe.id}`}
+                                                type="date"
+                                                value={recipe.plannedAt ? recipe.plannedAt.slice(0, 10) : ""}
+                                                onChange={(event) =>
+                                                    updateRecipe(recipe.id, {
+                                                        plannedAt: event.target.value || null
+                                                    })
+                                                }
+                                            />
+                                        </div>
+                                    </div>
 
                                     <p>
                                         {recipe.prepTime} min de préparation · {recipe.cookTime} min de cuisson

@@ -221,3 +221,33 @@ button {
     grid-template-columns: 1fr;
   }
 }
+
+.recipe-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.favorite-button {
+  width: auto;
+}
+
+.planning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.planning input {
+  padding: 8px;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+}
+
+@media (max-width: 600px) {
+  .recipe-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
