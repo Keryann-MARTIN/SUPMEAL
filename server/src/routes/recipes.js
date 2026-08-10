@@ -15,6 +15,7 @@ router.post("/", auth, async (req, res) => {
             cookTime,
             servings,
             tags,
+            imageUrl,
             source,
             cookbookId
         } = req.body
@@ -51,6 +52,7 @@ router.post("/", auth, async (req, res) => {
                 cookTime: Number(cookTime) || 0,
                 servings: Number(servings) || 1,
                 tags: tags || [],
+                imageUrl: imageUrl?.trim() || null,
                 source: source?.trim() || null,
                 cookbookId: cookbookId ? Number(cookbookId) : null,
                 userId: req.userId
@@ -199,7 +201,20 @@ router.get("/", auth, async (req, res) => {
 router.patch("/:id", auth, async (req, res) => {
     try {
         const recipeId = Number(req.params.id)
-        const { favorite, plannedAt } = req.body
+        const {
+            favorite,
+            plannedAt,
+            title,
+            ingredients,
+            steps,
+            prepTime,
+            cookTime,
+            servings,
+            tags,
+            imageUrl,
+            source,
+            cookbookId
+        } = req.body
 
         if (!recipeId) {
             return res.status(400).json({
@@ -256,6 +271,80 @@ router.patch("/:id", auth, async (req, res) => {
             }
         }
 
+        if (title !== undefined && title.trim()) {
+            data.title = title.trim()
+        }
+
+        if (prepTime !== undefined) {
+            data.prepTime = Number(prepTime)
+        }
+
+        if (cookTime !== undefined) {
+            data.cookTime = Number(cookTime)
+        }
+
+        if (servings !== undefined) {
+            data.servings = Number(servings)
+        }
+        if (title !== undefined && title.trim()) {
+            data.title = title.trim()
+        }
+
+        if (ingredients !== undefined && ingredients.length > 0) {
+            data.ingredients = ingredients
+        }
+
+        if (steps !== undefined && steps.length > 0) {
+            data.steps = steps
+        }
+
+        if (prepTime !== undefined) {
+            data.prepTime = Number(prepTime)
+        }
+
+        if (cookTime !== undefined) {
+            data.cookTime = Number(cookTime)
+        }
+
+        if (servings !== undefined) {
+            data.servings = Number(servings)
+        }
+
+        if (tags !== undefined) {
+            data.tags = tags
+        }
+
+        if (imageUrl !== undefined) {
+            data.imageUrl = imageUrl?.trim() || null
+        }
+
+        if (source !== undefined) {
+            data.source = source?.trim() || null
+        }
+
+        if (cookbookId !== undefined) {
+            if (cookbookId === null) {
+                data.cookbookId = null
+            } else {
+                const member = await prisma.cookbookMember.findUnique({
+                    where: {
+                        userId_cookbookId: {
+                            userId: req.userId,
+                            cookbookId: Number(cookbookId)
+                        }
+                    }
+                })
+
+                if (!member) {
+                    return res.status(403).json({
+                        message: "Vous n'avez pas accès à ce cookbook"
+                    })
+                }
+
+                data.cookbookId = Number(cookbookId)
+            }
+        }
+
         const updatedRecipe = await prisma.recipe.update({
             where: {
                 id: recipeId
@@ -267,6 +356,39 @@ router.patch("/:id", auth, async (req, res) => {
     } catch {
         res.status(500).json({
             message: "Erreur lors de la modification de la recette"
+        })
+    }
+})
+
+router.delete("/:id", auth, async (req, res) => {
+    try {
+        const recipeId = Number(req.params.id)
+
+        const recipe = await prisma.recipe.findFirst({
+            where: {
+                id: recipeId,
+                userId: req.userId
+            }
+        })
+
+        if (!recipe) {
+            return res.status(404).json({
+                message: "Recette introuvable"
+            })
+        }
+
+        await prisma.recipe.delete({
+            where: {
+                id: recipeId
+            }
+        })
+
+        res.json({
+            message: "Recette supprimée"
+        })
+    } catch {
+        res.status(500).json({
+            message: "Erreur lors de la suppression de la recette"
         })
     }
 })

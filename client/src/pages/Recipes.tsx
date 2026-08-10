@@ -16,6 +16,7 @@ type Recipe = {
     cookTime: number
     servings: number
     tags: string[]
+    imageUrl: string | null
     source: string | null
     favorite: boolean
     plannedAt: string | null
@@ -46,6 +47,98 @@ function Recipes() {
     const [maxPrepTime, setMaxPrepTime] = useState("")
     const [maxCookTime, setMaxCookTime] = useState("")
     const [favoriteOnly, setFavoriteOnly] = useState(false)
+
+    const [imageUrl, setImageUrl] = useState("")
+
+    const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null)
+    const [editTitle, setEditTitle] = useState("")
+    const [editPrepTime, setEditPrepTime] = useState("")
+    const [editCookTime, setEditCookTime] = useState("")
+    const [editServings, setEditServings] = useState("")
+    const [editIngredients, setEditIngredients] = useState("")
+    const [editSteps, setEditSteps] = useState("")
+    const [editTags, setEditTags] = useState("")
+    const [editImageUrl, setEditImageUrl] = useState("")
+    const [editSource, setEditSource] = useState("")
+    const [editCookbookId, setEditCookbookId] = useState("")
+
+    function startEditing(recipe: Recipe) {
+        setEditingRecipe(recipe)
+        setEditTitle(recipe.title)
+        setEditIngredients(recipe.ingredients.join("\n"))
+        setEditSteps(recipe.steps.join("\n"))
+        setEditPrepTime(String(recipe.prepTime))
+        setEditCookTime(String(recipe.cookTime))
+        setEditServings(String(recipe.servings))
+        setEditTags(recipe.tags.join(", "))
+        setEditImageUrl(recipe.imageUrl || "")
+        setEditSource(recipe.source || "")
+        setEditCookbookId(recipe.cookbook ? String(recipe.cookbook.id) : "")
+    }
+
+    async function saveRecipe(event: SyntheticEvent<HTMLFormElement>) {
+        event.preventDefault()
+
+        if (!editingRecipe) {
+            return
+        }
+
+        const token = localStorage.getItem("token")
+
+        if (!token) {
+            navigate("/login")
+            return
+        }
+
+        const ingredientList = editIngredients
+            .split("\n")
+            .map((ingredient) => ingredient.trim())
+            .filter(Boolean)
+
+        const stepList = editSteps
+            .split("\n")
+            .map((step) => step.trim())
+            .filter(Boolean)
+
+        const tagList = editTags
+            .split(",")
+            .map((tag) => tag.trim())
+            .filter(Boolean)
+
+        const response = await fetch(
+            `http://localhost:3000/recipes/${editingRecipe.id}`,
+            {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    title: editTitle,
+                    ingredients: ingredientList,
+                    steps: stepList,
+                    prepTime: Number(editPrepTime),
+                    cookTime: Number(editCookTime),
+                    servings: Number(editServings),
+                    tags: tagList,
+                    imageUrl: editImageUrl,
+                    source: editSource,
+                    cookbookId: editCookbookId ? Number(editCookbookId) : null
+                })
+            }
+        )
+
+        const data = await response.json()
+
+        if (!response.ok) {
+            setMessage(data.message)
+            return
+        }
+
+        setEditingRecipe(null)
+
+        await loadRecipes(token, getFilterQuery())
+    }
 
     async function loadRecipes(token: string, query = "") {
         const response = await fetch(`http://localhost:3000/recipes${query}`, {
@@ -157,7 +250,7 @@ function Recipes() {
             return
         }
 
-        await loadRecipes(token)
+        await loadRecipes(token, getFilterQuery())
     }
 
     useEffect(() => {
@@ -233,6 +326,7 @@ function Recipes() {
                 cookTime: Number(cookTime),
                 servings: Number(servings),
                 tags: tagList,
+                imageUrl,
                 source,
                 cookbookId: cookbookId ? Number(cookbookId) : null
             })
@@ -256,6 +350,37 @@ function Recipes() {
         setCookbookId("")
 
         await loadRecipes(token)
+    }
+
+    async function deleteRecipe(recipeId: number) {
+        const token = localStorage.getItem("token")
+
+        if (!token) {
+            navigate("/login")
+            return
+        }
+
+        const confirmed = window.confirm("Supprimer cette recette ?")
+
+        if (!confirmed) {
+            return
+        }
+
+        const response = await fetch(`http://localhost:3000/recipes/${recipeId}`, {
+            method: "DELETE",
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        })
+
+        const data = await response.json()
+
+        if (!response.ok) {
+            setMessage(data.message)
+            return
+        }
+
+        await loadRecipes(token, getFilterQuery())
     }
 
     return (
@@ -335,6 +460,15 @@ function Recipes() {
                             placeholder="Facile, Dessert, Rapide"
                         />
 
+                        <label htmlFor="image">Image</label>
+                        <input
+                            id="image"
+                            type="url"
+                            value={imageUrl}
+                            onChange={(event) => setImageUrl(event.target.value)}
+                            placeholder="https://..."
+                        />
+
                         <label htmlFor="source">Source</label>
                         <input
                             id="source"
@@ -365,6 +499,119 @@ function Recipes() {
 
                 <section className="panel">
                     <h2>Mes recettes</h2>
+
+                    {editingRecipe && (
+                        <form className="edit-recipe-form" onSubmit={saveRecipe}>
+                            <h3>Modifier {editingRecipe.title}</h3>
+
+                            <label htmlFor="edit-title">Titre</label>
+                            <input
+                                id="edit-title"
+                                type="text"
+                                value={editTitle}
+                                onChange={(event) => setEditTitle(event.target.value)}
+                                required
+                            />
+
+                            <label htmlFor="edit-ingredients">Ingrédients</label>
+                            <textarea
+                                id="edit-ingredients"
+                                value={editIngredients}
+                                onChange={(event) => setEditIngredients(event.target.value)}
+                                rows={5}
+                                required
+                            />
+
+                            <label htmlFor="edit-steps">Étapes</label>
+                            <textarea
+                                id="edit-steps"
+                                value={editSteps}
+                                onChange={(event) => setEditSteps(event.target.value)}
+                                rows={5}
+                                required
+                            />
+
+                            <label htmlFor="edit-prep-time">Temps de préparation (min)</label>
+                            <input
+                                id="edit-prep-time"
+                                type="number"
+                                min="0"
+                                value={editPrepTime}
+                                onChange={(event) => setEditPrepTime(event.target.value)}
+                            />
+
+                            <label htmlFor="edit-cook-time">Temps de cuisson (min)</label>
+                            <input
+                                id="edit-cook-time"
+                                type="number"
+                                min="0"
+                                value={editCookTime}
+                                onChange={(event) => setEditCookTime(event.target.value)}
+                            />
+
+                            <label htmlFor="edit-servings">Portions</label>
+                            <input
+                                id="edit-servings"
+                                type="number"
+                                min="1"
+                                value={editServings}
+                                onChange={(event) => setEditServings(event.target.value)}
+                            />
+
+                            <label htmlFor="edit-tags">Tags</label>
+                            <input
+                                id="edit-tags"
+                                type="text"
+                                value={editTags}
+                                onChange={(event) => setEditTags(event.target.value)}
+                                placeholder="Facile, Dessert, Rapide"
+                            />
+
+                            <label htmlFor="edit-image">Image</label>
+                            <input
+                                id="edit-image"
+                                type="url"
+                                value={editImageUrl}
+                                onChange={(event) => setEditImageUrl(event.target.value)}
+                                placeholder="https://..."
+                            />
+
+                            <label htmlFor="edit-source">Source</label>
+                            <input
+                                id="edit-source"
+                                type="text"
+                                value={editSource}
+                                onChange={(event) => setEditSource(event.target.value)}
+                            />
+
+                            <label htmlFor="edit-cookbook">Cookbook</label>
+                            <select
+                                id="edit-cookbook"
+                                value={editCookbookId}
+                                onChange={(event) => setEditCookbookId(event.target.value)}
+                            >
+                                <option value="">Recette personnelle</option>
+
+                                {cookbooks.map((cookbook) => (
+                                    <option key={cookbook.id} value={cookbook.id}>
+                                        {cookbook.name}
+                                    </option>
+                                ))}
+                            </select>
+
+                            <div className="filter-buttons">
+                                <button type="submit">Enregistrer</button>
+
+                                <button
+                                    type="button"
+                                    className="secondary-button"
+                                    onClick={() => setEditingRecipe(null)}
+                                >
+                                    Annuler
+                                </button>
+                            </div>
+                        </form>
+                    )}
 
                     <form className="recipe-filters" onSubmit={handleFilters}>
                         <input
@@ -448,6 +695,14 @@ function Recipes() {
                                 <article className="recipe-card" key={recipe.id}>
                                     <h3>{recipe.title}</h3>
 
+                                    {recipe.imageUrl && (
+                                        <img
+                                            className="recipe-image"
+                                            src={recipe.imageUrl}
+                                            alt={recipe.title}
+                                        />
+                                    )}
+
                                     <div className="recipe-actions">
                                         <button
                                             type="button"
@@ -459,6 +714,22 @@ function Recipes() {
                                             }
                                         >
                                             {recipe.favorite ? "★ Favori" : "☆ Ajouter aux favoris"}
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            className="secondary-button"
+                                            onClick={() => startEditing(recipe)}
+                                        >
+                                            Modifier
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            className="delete-button"
+                                            onClick={() => deleteRecipe(recipe.id)}
+                                        >
+                                            Supprimer
                                         </button>
 
                                         <div className="planning">
