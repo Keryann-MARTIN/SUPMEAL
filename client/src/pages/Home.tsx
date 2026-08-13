@@ -16,6 +16,16 @@ type Cookbook = {
     createdAt: string
 }
 
+type Member = {
+    id: number
+    role: string
+    user: {
+        id: number
+        name: string
+        email: string
+    }
+}
+
 async function fetchCookbooks(token: string) {
     const response = await fetch("http://localhost:3000/cookbooks", {
         headers: {
@@ -38,6 +48,12 @@ function Home() {
     const [name, setName] = useState("")
     const [description, setDescription] = useState("")
     const [message, setMessage] = useState("")
+
+    const [selectedCookbook, setSelectedCookbook] = useState<Cookbook | null>(null)
+    const [members, setMembers] = useState<Member[]>([])
+    const [memberEmail, setMemberEmail] = useState("")
+    const [memberRole, setMemberRole] = useState("READER")
+    const [memberMessage, setMemberMessage] = useState("")
 
     useEffect(() => {
         const token = localStorage.getItem("token")
@@ -84,34 +100,174 @@ function Home() {
             return
         }
 
-        try {
-            const response = await fetch("http://localhost:3000/cookbooks", {
+        const response = await fetch("http://localhost:3000/cookbooks", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                name,
+                description
+            })
+        })
+
+        const data = await response.json()
+
+        if (!response.ok) {
+            setMessage(data.message)
+            return
+        }
+
+        setCookbooks(await fetchCookbooks(token))
+        setName("")
+        setDescription("")
+    }
+
+    async function loadMembers(cookbook: Cookbook) {
+        const token = localStorage.getItem("token")
+
+        if (!token) {
+            navigate("/login")
+            return
+        }
+
+        setMemberMessage("")
+
+        const response = await fetch(
+            `http://localhost:3000/cookbooks/${cookbook.id}/members`,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            }
+        )
+
+        const data = await response.json()
+
+        if (!response.ok) {
+            setMemberMessage(data.message)
+            return
+        }
+
+        setSelectedCookbook(cookbook)
+        setMembers(data)
+    }
+
+    async function addMember(event: SyntheticEvent<HTMLFormElement>) {
+        event.preventDefault()
+
+        if (!selectedCookbook) {
+            return
+        }
+
+        const token = localStorage.getItem("token")
+
+        if (!token) {
+            navigate("/login")
+            return
+        }
+
+        setMemberMessage("")
+
+        const response = await fetch(
+            `http://localhost:3000/cookbooks/${selectedCookbook.id}/members`,
+            {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     Authorization: `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                    name,
-                    description
+                    email: memberEmail,
+                    role: memberRole
                 })
-            })
-
-            const data = await response.json()
-
-            if (!response.ok) {
-                setMessage(data.message)
-                return
             }
+        )
 
-            const updatedCookbooks = await fetchCookbooks(token)
+        const data = await response.json()
 
-            setCookbooks(updatedCookbooks)
-            setName("")
-            setDescription("")
-        } catch {
-            setMessage("Impossible de créer le cookbook")
+        if (!response.ok) {
+            setMemberMessage(data.message)
+            return
         }
+
+        setMemberEmail("")
+        setMemberRole("READER")
+
+        await loadMembers(selectedCookbook)
+    }
+
+    async function changeRole(memberId: number, role: string) {
+        if (!selectedCookbook) {
+            return
+        }
+
+        const token = localStorage.getItem("token")
+
+        if (!token) {
+            navigate("/login")
+            return
+        }
+
+        const response = await fetch(
+            `http://localhost:3000/cookbooks/${selectedCookbook.id}/members/${memberId}`,
+            {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    role
+                })
+            }
+        )
+
+        const data = await response.json()
+
+        if (!response.ok) {
+            setMemberMessage(data.message)
+            return
+        }
+
+        await loadMembers(selectedCookbook)
+    }
+
+    async function removeMember(memberId: number) {
+        if (!selectedCookbook) {
+            return
+        }
+
+        if (!window.confirm("Supprimer ce membre du cookbook ?")) {
+            return
+        }
+
+        const token = localStorage.getItem("token")
+
+        if (!token) {
+            navigate("/login")
+            return
+        }
+
+        const response = await fetch(
+            `http://localhost:3000/cookbooks/${selectedCookbook.id}/members/${memberId}`,
+            {
+                method: "DELETE",
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            }
+        )
+
+        const data = await response.json()
+
+        if (!response.ok) {
+            setMemberMessage(data.message)
+            return
+        }
+
+        await loadMembers(selectedCookbook)
     }
 
     function logout() {
@@ -148,7 +304,6 @@ function Home() {
                         <label htmlFor="cookbook-name">Nom</label>
                         <input
                             id="cookbook-name"
-                            type="text"
                             value={name}
                             onChange={(event) => setName(event.target.value)}
                             required
@@ -179,17 +334,111 @@ function Home() {
                                 <article className="cookbook-card" key={cookbook.id}>
                                     <h3>{cookbook.name}</h3>
 
-                                    {cookbook.description && (
-                                        <p>{cookbook.description}</p>
-                                    )}
+                                    {cookbook.description && <p>{cookbook.description}</p>}
 
-                                    <span>{cookbook.role}</span>
+                                    <div className="cookbook-footer">
+                                        <span>{cookbook.role}</span>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => loadMembers(cookbook)}
+                                        >
+                                            Membres
+                                        </button>
+                                    </div>
                                 </article>
                             ))}
                         </div>
                     )}
                 </section>
             </div>
+
+            {selectedCookbook && (
+                <section className="members-panel">
+                    <div className="members-header">
+                        <h2>Membres de {selectedCookbook.name}</h2>
+
+                        <button
+                            type="button"
+                            className="secondary-button"
+                            onClick={() => setSelectedCookbook(null)}
+                        >
+                            Fermer
+                        </button>
+                    </div>
+
+                    {selectedCookbook.role === "OWNER" && (
+                        <form className="member-form" onSubmit={addMember}>
+                            <div>
+                                <label htmlFor="member-email">Email</label>
+                                <input
+                                    id="member-email"
+                                    type="email"
+                                    value={memberEmail}
+                                    onChange={(event) => setMemberEmail(event.target.value)}
+                                    required
+                                />
+                            </div>
+
+                            <div>
+                                <label htmlFor="member-role">Rôle</label>
+                                <select
+                                    id="member-role"
+                                    value={memberRole}
+                                    onChange={(event) => setMemberRole(event.target.value)}
+                                >
+                                    <option value="EDITOR">Éditeur</option>
+                                    <option value="READER">Lecteur</option>
+                                    <option value="COMMENTATOR">Commentateur</option>
+                                </select>
+                            </div>
+
+                            <button type="submit">Ajouter</button>
+                        </form>
+                    )}
+
+                    {memberMessage && (
+                        <p className="error-message">{memberMessage}</p>
+                    )}
+
+                    <div className="member-list">
+                        {members.map((member) => (
+                            <article className="member-card" key={member.id}>
+                                <div>
+                                    <strong>{member.user.name}</strong>
+                                    <p>{member.user.email}</p>
+                                </div>
+
+                                {selectedCookbook.role === "OWNER" &&
+                                    member.role !== "OWNER" ? (
+                                    <div className="member-actions">
+                                        <select
+                                            value={member.role}
+                                            onChange={(event) =>
+                                                changeRole(member.id, event.target.value)
+                                            }
+                                        >
+                                            <option value="EDITOR">Éditeur</option>
+                                            <option value="READER">Lecteur</option>
+                                            <option value="COMMENTATOR">Commentateur</option>
+                                        </select>
+
+                                        <button
+                                            type="button"
+                                            className="delete-button"
+                                            onClick={() => removeMember(member.id)}
+                                        >
+                                            Supprimer
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <span className="member-role">{member.role}</span>
+                                )}
+                            </article>
+                        ))}
+                    </div>
+                </section>
+            )}
         </main>
     )
 }

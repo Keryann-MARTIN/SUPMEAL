@@ -77,4 +77,262 @@ router.get("/", auth, async (req, res) => {
     }
 })
 
+router.get("/:id/members", auth, async (req, res) => {
+    try {
+        const cookbookId = Number(req.params.id)
+
+        const membership = await prisma.cookbookMember.findUnique({
+            where: {
+                userId_cookbookId: {
+                    userId: req.userId,
+                    cookbookId
+                }
+            }
+        })
+
+        if (!membership) {
+            return res.status(403).json({
+                message: "Vous n'avez pas accès à ce cookbook"
+            })
+        }
+
+        const members = await prisma.cookbookMember.findMany({
+            where: {
+                cookbookId
+            },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true
+                    }
+                }
+            },
+            orderBy: {
+                createdAt: "asc"
+            }
+        })
+
+        const result = members.map((member) => ({
+            id: member.id,
+            role: member.role,
+            user: member.user
+        }))
+
+        res.json(result)
+    } catch {
+        res.status(500).json({
+            message: "Erreur lors de la récupération des membres"
+        })
+    }
+})
+
+router.post("/:id/members", auth, async (req, res) => {
+    try {
+        const cookbookId = Number(req.params.id)
+        const { email, role } = req.body
+
+        const owner = await prisma.cookbookMember.findUnique({
+            where: {
+                userId_cookbookId: {
+                    userId: req.userId,
+                    cookbookId
+                }
+            }
+        })
+
+        if (!owner || owner.role !== "OWNER") {
+            return res.status(403).json({
+                message: "Seul le propriétaire peut ajouter des membres"
+            })
+        }
+
+        if (!email) {
+            return res.status(400).json({
+                message: "L'email est obligatoire"
+            })
+        }
+
+        const allowedRoles = ["EDITOR", "READER", "COMMENTATOR"]
+        const selectedRole = role || "READER"
+
+        if (!allowedRoles.includes(selectedRole)) {
+            return res.status(400).json({
+                message: "Rôle invalide"
+            })
+        }
+
+        const user = await prisma.user.findUnique({
+            where: {
+                email: email.toLowerCase().trim()
+            }
+        })
+
+        if (!user) {
+            return res.status(404).json({
+                message: "Utilisateur introuvable"
+            })
+        }
+
+        const existingMember = await prisma.cookbookMember.findUnique({
+            where: {
+                userId_cookbookId: {
+                    userId: user.id,
+                    cookbookId
+                }
+            }
+        })
+
+        if (existingMember) {
+            return res.status(409).json({
+                message: "Cet utilisateur est déjà membre"
+            })
+        }
+
+        const member = await prisma.cookbookMember.create({
+            data: {
+                userId: user.id,
+                cookbookId,
+                role: selectedRole
+            },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true
+                    }
+                }
+            }
+        })
+
+        res.status(201).json(member)
+    } catch {
+        res.status(500).json({
+            message: "Erreur lors de l'ajout du membre"
+        })
+    }
+})
+
+router.patch("/:id/members/:memberId", auth, async (req, res) => {
+    try {
+        const cookbookId = Number(req.params.id)
+        const memberId = Number(req.params.memberId)
+        const { role } = req.body
+
+        const owner = await prisma.cookbookMember.findUnique({
+            where: {
+                userId_cookbookId: {
+                    userId: req.userId,
+                    cookbookId
+                }
+            }
+        })
+
+        if (!owner || owner.role !== "OWNER") {
+            return res.status(403).json({
+                message: "Seul le propriétaire peut modifier les rôles"
+            })
+        }
+
+        const allowedRoles = ["EDITOR", "READER", "COMMENTATOR"]
+
+        if (!allowedRoles.includes(role)) {
+            return res.status(400).json({
+                message: "Rôle invalide"
+            })
+        }
+
+        const member = await prisma.cookbookMember.findFirst({
+            where: {
+                id: memberId,
+                cookbookId
+            }
+        })
+
+        if (!member) {
+            return res.status(404).json({
+                message: "Membre introuvable"
+            })
+        }
+
+        if (member.role === "OWNER") {
+            return res.status(400).json({
+                message: "Le rôle du propriétaire ne peut pas être modifié"
+            })
+        }
+
+        const updatedMember = await prisma.cookbookMember.update({
+            where: {
+                id: memberId
+            },
+            data: {
+                role
+            }
+        })
+
+        res.json(updatedMember)
+    } catch {
+        res.status(500).json({
+            message: "Erreur lors de la modification du rôle"
+        })
+    }
+})
+
+router.delete("/:id/members/:memberId", auth, async (req, res) => {
+    try {
+        const cookbookId = Number(req.params.id)
+        const memberId = Number(req.params.memberId)
+
+        const owner = await prisma.cookbookMember.findUnique({
+            where: {
+                userId_cookbookId: {
+                    userId: req.userId,
+                    cookbookId
+                }
+            }
+        })
+
+        if (!owner || owner.role !== "OWNER") {
+            return res.status(403).json({
+                message: "Seul le propriétaire peut supprimer des membres"
+            })
+        }
+
+        const member = await prisma.cookbookMember.findFirst({
+            where: {
+                id: memberId,
+                cookbookId
+            }
+        })
+
+        if (!member) {
+            return res.status(404).json({
+                message: "Membre introuvable"
+            })
+        }
+
+        if (member.role === "OWNER") {
+            return res.status(400).json({
+                message: "Le propriétaire ne peut pas être supprimé"
+            })
+        }
+
+        await prisma.cookbookMember.delete({
+            where: {
+                id: memberId
+            }
+        })
+
+        res.json({
+            message: "Membre supprimé"
+        })
+    } catch {
+        res.status(500).json({
+            message: "Erreur lors de la suppression du membre"
+        })
+    }
+})
+
 module.exports = router

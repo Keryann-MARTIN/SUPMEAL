@@ -36,9 +36,9 @@ router.post("/", auth, async (req, res) => {
                 }
             })
 
-            if (!member) {
+            if (!member || !["OWNER", "EDITOR"].includes(member.role)) {
                 return res.status(403).json({
-                    message: "Vous n'avez pas accès à ce cookbook"
+                    message: "Vous n'avez pas la permission d'ajouter une recette"
                 })
             }
         }
@@ -222,24 +222,9 @@ router.patch("/:id", auth, async (req, res) => {
             })
         }
 
-        const recipe = await prisma.recipe.findFirst({
+        const recipe = await prisma.recipe.findUnique({
             where: {
-                id: recipeId,
-                OR: [
-                    {
-                        userId: req.userId,
-                        cookbookId: null
-                    },
-                    {
-                        cookbook: {
-                            members: {
-                                some: {
-                                    userId: req.userId
-                                }
-                            }
-                        }
-                    }
-                ]
+                id: recipeId
             }
         })
 
@@ -247,6 +232,29 @@ router.patch("/:id", auth, async (req, res) => {
             return res.status(404).json({
                 message: "Recette introuvable"
             })
+        }
+
+        if (recipe.cookbookId === null) {
+            if (recipe.userId !== req.userId) {
+                return res.status(403).json({
+                    message: "Vous n'avez pas la permission de modifier cette recette"
+                })
+            }
+        } else {
+            const member = await prisma.cookbookMember.findUnique({
+                where: {
+                    userId_cookbookId: {
+                        userId: req.userId,
+                        cookbookId: recipe.cookbookId
+                    }
+                }
+            })
+
+            if (!member || !["OWNER", "EDITOR"].includes(member.role)) {
+                return res.status(403).json({
+                    message: "Vous n'avez pas la permission de modifier cette recette"
+                })
+            }
         }
 
         const data = {}
