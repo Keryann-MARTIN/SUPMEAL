@@ -401,4 +401,125 @@ router.delete("/:id", auth, async (req, res) => {
     }
 })
 
+router.get("/:id/comments", auth, async (req, res) => {
+    try {
+        const recipeId = Number(req.params.id)
+
+        const recipe = await prisma.recipe.findUnique({
+            where: {
+                id: recipeId
+            }
+        })
+
+        if (!recipe || !recipe.cookbookId) {
+            return res.status(404).json({
+                message: "Recette partagée introuvable"
+            })
+        }
+
+        const member = await prisma.cookbookMember.findUnique({
+            where: {
+                userId_cookbookId: {
+                    userId: req.userId,
+                    cookbookId: recipe.cookbookId
+                }
+            }
+        })
+
+        if (!member) {
+            return res.status(403).json({
+                message: "Vous n'avez pas accès à cette recette"
+            })
+        }
+
+        const comments = await prisma.comment.findMany({
+            where: {
+                recipeId
+            },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        name: true
+                    }
+                }
+            },
+            orderBy: {
+                createdAt: "asc"
+            }
+        })
+
+        res.json(comments)
+    } catch {
+        res.status(500).json({
+            message: "Erreur lors de la récupération des commentaires"
+        })
+    }
+})
+
+router.post("/:id/comments", auth, async (req, res) => {
+    try {
+        const recipeId = Number(req.params.id)
+        const { content } = req.body
+
+        if (!content || !content.trim()) {
+            return res.status(400).json({
+                message: "Le commentaire est obligatoire"
+            })
+        }
+
+        const recipe = await prisma.recipe.findUnique({
+            where: {
+                id: recipeId
+            }
+        })
+
+        if (!recipe || !recipe.cookbookId) {
+            return res.status(404).json({
+                message: "Recette partagée introuvable"
+            })
+        }
+
+        const member = await prisma.cookbookMember.findUnique({
+            where: {
+                userId_cookbookId: {
+                    userId: req.userId,
+                    cookbookId: recipe.cookbookId
+                }
+            }
+        })
+
+        if (
+            !member ||
+            !["OWNER", "EDITOR", "COMMENTATOR"].includes(member.role)
+        ) {
+            return res.status(403).json({
+                message: "Vous n'avez pas la permission de commenter"
+            })
+        }
+
+        const comment = await prisma.comment.create({
+            data: {
+                content: content.trim(),
+                userId: req.userId,
+                recipeId
+            },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        name: true
+                    }
+                }
+            }
+        })
+
+        res.status(201).json(comment)
+    } catch {
+        res.status(500).json({
+            message: "Erreur lors de l'ajout du commentaire"
+        })
+    }
+})
+
 module.exports = router

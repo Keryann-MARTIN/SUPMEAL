@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom"
 type Cookbook = {
     id: number
     name: string
+    role: string
 }
 
 type Recipe = {
@@ -21,6 +22,16 @@ type Recipe = {
     favorite: boolean
     plannedAt: string | null
     cookbook: Cookbook | null
+}
+
+type RecipeComment = {
+    id: number
+    content: string
+    createdAt: string
+    user: {
+        id: number
+        name: string
+    }
 }
 
 function Recipes() {
@@ -61,6 +72,11 @@ function Recipes() {
     const [editImageUrl, setEditImageUrl] = useState("")
     const [editSource, setEditSource] = useState("")
     const [editCookbookId, setEditCookbookId] = useState("")
+
+    const [openCommentsRecipeId, setOpenCommentsRecipeId] = useState<number | null>(null)
+    const [comments, setComments] = useState<RecipeComment[]>([])
+    const [commentText, setCommentText] = useState("")
+    const [commentMessage, setCommentMessage] = useState("")
 
     function startEditing(recipe: Recipe) {
         setEditingRecipe(recipe)
@@ -381,6 +397,103 @@ function Recipes() {
         }
 
         await loadRecipes(token, getFilterQuery())
+    }
+
+    async function loadComments(recipeId: number) {
+        const token = localStorage.getItem("token")
+
+        if (!token) {
+            navigate("/login")
+            return
+        }
+
+        const response = await fetch(
+            `http://localhost:3000/recipes/${recipeId}/comments`,
+            {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            }
+        )
+
+        const data = await response.json()
+
+        if (!response.ok) {
+            setCommentMessage(data.message)
+            return
+        }
+
+        setComments(data)
+    }
+
+    async function toggleComments(recipeId: number) {
+        setCommentMessage("")
+        setCommentText("")
+
+        if (openCommentsRecipeId === recipeId) {
+            setOpenCommentsRecipeId(null)
+            setComments([])
+            return
+        }
+
+        setOpenCommentsRecipeId(recipeId)
+        await loadComments(recipeId)
+    }
+
+    async function addComment(
+        event: SyntheticEvent<HTMLFormElement>,
+        recipeId: number
+    ) {
+        event.preventDefault()
+
+        const token = localStorage.getItem("token")
+
+        if (!token) {
+            navigate("/login")
+            return
+        }
+
+        setCommentMessage("")
+
+        const response = await fetch(
+            `http://localhost:3000/recipes/${recipeId}/comments`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    content: commentText
+                })
+            }
+        )
+
+        const data = await response.json()
+
+        if (!response.ok) {
+            setCommentMessage(data.message)
+            return
+        }
+
+        setCommentText("")
+        await loadComments(recipeId)
+    }
+
+    function canComment(recipe: Recipe) {
+        if (!recipe.cookbook) {
+            return false
+        }
+
+        const cookbook = cookbooks.find(
+            (item) => item.id === recipe.cookbook?.id
+        )
+
+        if (!cookbook) {
+            return false
+        }
+
+        return ["OWNER", "EDITOR", "COMMENTATOR"].includes(cookbook.role)
     }
 
     return (
@@ -779,6 +892,74 @@ function Recipes() {
                                             <li key={index}>{step}</li>
                                         ))}
                                     </ol>
+                                    {recipe.cookbook && (
+                                        <div className="comments-section">
+                                            <button
+                                                type="button"
+                                                className="secondary-button"
+                                                onClick={() => toggleComments(recipe.id)}
+                                            >
+                                                {openCommentsRecipeId === recipe.id
+                                                    ? "Masquer les commentaires"
+                                                    : "Commentaires"}
+                                            </button>
+
+                                            {openCommentsRecipeId === recipe.id && (
+                                                <div className="comments-panel">
+                                                    <h4>Commentaires</h4>
+
+                                                    {comments.length === 0 ? (
+                                                        <p>Aucun commentaire pour le moment.</p>
+                                                    ) : (
+                                                        <div className="comment-list">
+                                                            {comments.map((comment) => (
+                                                                <div className="comment-card" key={comment.id}>
+                                                                    <div className="comment-header">
+                                                                        <strong>{comment.user.name}</strong>
+
+                                                                        <span>
+                                                                            {new Date(comment.createdAt).toLocaleString("fr-FR")}
+                                                                        </span>
+                                                                    </div>
+
+                                                                    <p>{comment.content}</p>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+
+                                                    {canComment(recipe) ? (
+                                                        <form
+                                                            className="comment-form"
+                                                            onSubmit={(event) => addComment(event, recipe.id)}
+                                                        >
+                                                            <label htmlFor={`comment-${recipe.id}`}>
+                                                                Ajouter un commentaire
+                                                            </label>
+
+                                                            <textarea
+                                                                id={`comment-${recipe.id}`}
+                                                                value={commentText}
+                                                                onChange={(event) => setCommentText(event.target.value)}
+                                                                rows={3}
+                                                                required
+                                                            />
+
+                                                            <button type="submit">Envoyer</button>
+                                                        </form>
+                                                    ) : (
+                                                        <p className="read-only-message">
+                                                            Vous pouvez consulter les commentaires mais pas en ajouter.
+                                                        </p>
+                                                    )}
+
+                                                    {commentMessage && (
+                                                        <p className="error-message">{commentMessage}</p>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </article>
                             ))}
                         </div>

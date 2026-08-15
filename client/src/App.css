@@ -418,3 +418,68 @@ button {
     flex-direction: column;
   }
 }
+
+.comments-section {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #dddddd;
+}
+
+.comments-panel {
+  margin-top: 14px;
+}
+
+.comments-panel h4 {
+  margin-top: 0;
+}
+
+.comment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.comment-card {
+  padding: 10px;
+  background: #f7f7f7;
+  border-radius: 6px;
+}
+
+.comment-card p {
+  margin: 8px 0 0;
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.comment-header span {
+  font-size: 0.85rem;
+  color: #666666;
+}
+
+.comment-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.comment-form textarea {
+  padding: 9px;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  resize: vertical;
+}
+
+.comment-form button {
+  align-self: flex-start;
+}
+
+.read-only-message {
+  font-size: 0.9rem;
+  color: #666666;
+}
