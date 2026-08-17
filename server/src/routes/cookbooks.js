@@ -335,4 +335,99 @@ router.delete("/:id/members/:memberId", auth, async (req, res) => {
     }
 })
 
+router.get("/:id/messages", auth, async (req, res) => {
+    try {
+        const cookbookId = Number(req.params.id)
+
+        const member = await prisma.cookbookMember.findUnique({
+            where: {
+                userId_cookbookId: {
+                    userId: req.userId,
+                    cookbookId
+                }
+            }
+        })
+
+        if (!member) {
+            return res.status(403).json({
+                message: "Vous n'avez pas accès à ce cookbook"
+            })
+        }
+
+        const messages = await prisma.message.findMany({
+            where: {
+                cookbookId
+            },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        name: true
+                    }
+                }
+            },
+            orderBy: {
+                createdAt: "asc"
+            },
+            take: 100
+        })
+
+        res.json(messages)
+    } catch {
+        res.status(500).json({
+            message: "Erreur lors de la récupération des messages"
+        })
+    }
+})
+
+router.post("/:id/messages", auth, async (req, res) => {
+    try {
+        const cookbookId = Number(req.params.id)
+        const { content } = req.body
+
+        if (!content || !content.trim()) {
+            return res.status(400).json({
+                message: "Le message est obligatoire"
+            })
+        }
+
+        const member = await prisma.cookbookMember.findUnique({
+            where: {
+                userId_cookbookId: {
+                    userId: req.userId,
+                    cookbookId
+                }
+            }
+        })
+
+        if (!member) {
+            return res.status(403).json({
+                message: "Vous n'avez pas accès à ce cookbook"
+            })
+        }
+
+        const message = await prisma.message.create({
+            data: {
+                content: content.trim(),
+                userId: req.userId,
+                cookbookId
+            },
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        name: true
+                    }
+                }
+            }
+        })
+
+        res.status(201).json(message)
+    } catch {
+        res.status(500).json({
+            message: "Erreur lors de l'envoi du message"
+        })
+    }
+})
+
 module.exports = router
