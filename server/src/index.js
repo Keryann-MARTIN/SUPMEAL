@@ -1,3 +1,6 @@
+const http = require("http")
+const { Server } = require("socket.io")
+
 const express = require("express")
 const cors = require("cors")
 require("dotenv").config()
@@ -9,6 +12,16 @@ const recipeRoutes = require("./routes/recipes")
 
 const app = express()
 const port = process.env.PORT || 3000
+
+const server = http.createServer(app)
+
+const io = new Server(server, {
+    cors: {
+        origin: "http://localhost:5173"
+    }
+})
+
+app.set("io", io)
 
 app.use(cors())
 app.use(express.json())
@@ -37,6 +50,14 @@ app.get("/health", async (req, res) => {
     }
 })
 
-app.listen(port, () => {
+io.on("connection", (socket) => {
+    console.log(`Client Socket.IO connecté : ${socket.id}`)
+
+    socket.on("disconnect", () => {
+        console.log(`Client Socket.IO déconnecté : ${socket.id}`)
+    })
+})
+
+server.listen(port, () => {
     console.log(`Serveur démarré sur le port ${port}`)
 })

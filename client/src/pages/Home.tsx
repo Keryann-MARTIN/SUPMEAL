@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import type { SyntheticEvent } from "react"
 import { Link, useNavigate } from "react-router-dom"
+import socket from "../socket"
 
 type User = {
     id: number
@@ -54,6 +55,18 @@ function Home() {
     const [memberEmail, setMemberEmail] = useState("")
     const [memberRole, setMemberRole] = useState("READER")
     const [memberMessage, setMemberMessage] = useState("")
+
+    useEffect(() => {
+        function handleConnect() {
+            console.log("Socket.IO connecté", socket.id)
+        }
+
+        socket.on("connect", handleConnect)
+
+        return () => {
+            socket.off("connect", handleConnect)
+        }
+    }, [])
 
     useEffect(() => {
         const token = localStorage.getItem("token")

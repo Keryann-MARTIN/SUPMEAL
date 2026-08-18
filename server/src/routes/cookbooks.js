@@ -422,6 +422,12 @@ router.post("/:id/messages", auth, async (req, res) => {
             }
         })
 
+        const io = req.app.get("io")
+
+        io.emit("cookbook-messages-updated", {
+            cookbookId
+        })
+
         res.status(201).json(message)
     } catch {
         res.status(500).json({
