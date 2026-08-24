@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import type { SyntheticEvent } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import socket from "../socket"
@@ -24,6 +24,16 @@ type Member = {
         id: number
         name: string
         email: string
+    }
+}
+
+type CookbookMessage = {
+    id: number
+    content: string
+    createdAt: string
+    user: {
+        id: number
+        name: string
     }
 }
 
@@ -56,17 +66,45 @@ function Home() {
     const [memberRole, setMemberRole] = useState("READER")
     const [memberMessage, setMemberMessage] = useState("")
 
-    useEffect(() => {
-        function handleConnect() {
-            console.log("Socket.IO connecté", socket.id)
-        }
+    const [selectedChatCookbook, setSelectedChatCookbook] = useState<Cookbook | null>(null)
 
-        socket.on("connect", handleConnect)
+    const [chatMessages, setChatMessages] = useState<CookbookMessage[]>([])
+    const [newMessage, setNewMessage] = useState("")
+    const [chatError, setChatError] = useState("")
 
-        return () => {
-            socket.off("connect", handleConnect)
-        }
-    }, [])
+    const loadChatMessages = useCallback(
+        async (cookbookId: number) => {
+            const token = localStorage.getItem("token")
+
+            if (!token) {
+                navigate("/login")
+                return
+            }
+
+            try {
+                const response = await fetch(
+                    `http://localhost:3000/cookbooks/${cookbookId}/messages`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${token}`
+                        }
+                    }
+                )
+
+                const data = await response.json()
+
+                if (!response.ok) {
+                    setChatError(data.message)
+                    return
+                }
+
+                setChatMessages(data)
+            } catch {
+                setChatError("Impossible de récupérer les messages")
+            }
+        },
+        [navigate]
+    )
 
     useEffect(() => {
         const token = localStorage.getItem("token")
@@ -101,6 +139,76 @@ function Home() {
 
         loadData(token)
     }, [navigate])
+
+    useEffect(() => {
+        if (!selectedChatCookbook) {
+            return
+        }
+
+        function handleMessagesUpdated(data: { cookbookId: number }) {
+            if (data.cookbookId === selectedChatCookbook?.id) {
+                loadChatMessages(data.cookbookId)
+            }
+        }
+
+        socket.on("cookbook-messages-updated", handleMessagesUpdated)
+
+        return () => {
+            socket.off("cookbook-messages-updated", handleMessagesUpdated)
+        }
+    }, [selectedChatCookbook, loadChatMessages])
+
+    async function openChat(cookbook: Cookbook) {
+        setSelectedCookbook(null)
+        setSelectedChatCookbook(cookbook)
+        setChatMessages([])
+        setNewMessage("")
+        setChatError("")
+
+        await loadChatMessages(cookbook.id)
+    }
+
+    async function sendMessage(event: SyntheticEvent<HTMLFormElement>) {
+        event.preventDefault()
+
+        if (!selectedChatCookbook) {
+            return
+        }
+
+        const token = localStorage.getItem("token")
+
+        if (!token) {
+            navigate("/login")
+            return
+        }
+
+        setChatError("")
+
+        const response = await fetch(
+            `http://localhost:3000/cookbooks/${selectedChatCookbook.id}/messages`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    content: newMessage
+                })
+            }
+        )
+
+        const data = await response.json()
+
+        if (!response.ok) {
+            setChatError(data.message)
+            return
+        }
+
+        setNewMessage("")
+
+        await loadChatMessages(selectedChatCookbook.id)
+    }
 
     async function handleSubmit(event: SyntheticEvent<HTMLFormElement>) {
         event.preventDefault()
@@ -139,6 +247,8 @@ function Home() {
 
     async function loadMembers(cookbook: Cookbook) {
         const token = localStorage.getItem("token")
+
+        setSelectedChatCookbook(null)
 
         if (!token) {
             navigate("/login")
@@ -283,6 +393,7 @@ function Home() {
         await loadMembers(selectedCookbook)
     }
 
+
     function logout() {
         localStorage.removeItem("token")
         navigate("/login")
@@ -352,12 +463,22 @@ function Home() {
                                     <div className="cookbook-footer">
                                         <span>{cookbook.role}</span>
 
-                                        <button
-                                            type="button"
-                                            onClick={() => loadMembers(cookbook)}
-                                        >
-                                            Membres
-                                        </button>
+                                        <div className="cookbook-buttons">
+                                            <button
+                                                type="button"
+                                                onClick={() => loadMembers(cookbook)}
+                                            >
+                                                Membres
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                className="secondary-button"
+                                                onClick={() => openChat(cookbook)}
+                                            >
+                                                Discussion
+                                            </button>
+                                        </div>
                                     </div>
                                 </article>
                             ))}
@@ -450,6 +571,63 @@ function Home() {
                             </article>
                         ))}
                     </div>
+                </section>
+            )}
+            {selectedChatCookbook && (
+                <section className="chat-panel">
+                    <div className="members-header">
+                        <div>
+                            <h2>Discussion - {selectedChatCookbook.name}</h2>
+                            <p>Discussion entre les membres du cookbook</p>
+                        </div>
+
+                        <button
+                            type="button"
+                            className="secondary-button"
+                            onClick={() => setSelectedChatCookbook(null)}
+                        >
+                            Fermer
+                        </button>
+                    </div>
+
+                    <div className="chat-messages">
+                        {chatMessages.length === 0 ? (
+                            <p>Aucun message pour le moment.</p>
+                        ) : (
+                            chatMessages.map((message) => (
+                                <div className="chat-message" key={message.id}>
+                                    <div className="chat-message-header">
+                                        <strong>{message.user.name}</strong>
+
+                                        <span>
+                                            {new Date(message.createdAt).toLocaleString("fr-FR")}
+                                        </span>
+                                    </div>
+
+                                    <p>{message.content}</p>
+                                </div>
+                            ))
+                        )}
+                    </div>
+
+                    <form className="chat-form" onSubmit={sendMessage}>
+                        <label htmlFor="new-message">Message</label>
+
+                        <textarea
+                            id="new-message"
+                            value={newMessage}
+                            onChange={(event) => setNewMessage(event.target.value)}
+                            rows={3}
+                            placeholder="Écrire un message..."
+                            required
+                        />
+
+                        <button type="submit">Envoyer</button>
+                    </form>
+
+                    {chatError && (
+                        <p className="error-message">{chatError}</p>
+                    )}
                 </section>
             )}
         </main>

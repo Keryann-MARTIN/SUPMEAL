@@ -483,3 +483,68 @@ button {
   font-size: 0.9rem;
   color: #666666;
 }
+
+.cookbook-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.chat-panel {
+  width: 100%;
+  max-width: 1000px;
+  margin: 20px auto 0;
+  padding: 24px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.chat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 400px;
+  margin-bottom: 20px;
+  padding: 12px;
+  overflow-y: auto;
+  border: 1px solid #dddddd;
+  border-radius: 6px;
+}
+
+.chat-message {
+  padding: 10px;
+  background: #f7f7f7;
+  border-radius: 6px;
+}
+
+.chat-message p {
+  margin: 8px 0 0;
+}
+
+.chat-message-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.chat-message-header span {
+  font-size: 0.85rem;
+  color: #666666;
+}
+
+.chat-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chat-form textarea {
+  padding: 9px;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  resize: vertical;
+}
+
+.chat-form button {
+  align-self: flex-start;
+}
