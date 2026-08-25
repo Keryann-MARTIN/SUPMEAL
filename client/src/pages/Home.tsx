@@ -393,6 +393,36 @@ function Home() {
         await loadMembers(selectedCookbook)
     }
 
+    async function exportData() {
+        const token = localStorage.getItem("token")
+
+        if (!token) {
+            navigate("/login")
+            return
+        }
+
+        const response = await fetch("http://localhost:3000/export", {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        })
+
+        if (!response.ok) {
+            setMessage("Impossible d'exporter les données")
+            return
+        }
+
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+
+        const link = document.createElement("a")
+        link.href = url
+        link.download = "supmeal-export.json"
+        link.click()
+
+        window.URL.revokeObjectURL(url)
+    }
+
 
     function logout() {
         localStorage.removeItem("token")
@@ -415,6 +445,14 @@ function Home() {
                     <Link className="button-link" to="/recipes">
                         Recettes
                     </Link>
+
+                    <button
+                        type="button"
+                        className="secondary-button"
+                        onClick={exportData}
+                    >
+                        Exporter
+                    </button>
 
                     <button onClick={logout}>Se déconnecter</button>
                 </div>
