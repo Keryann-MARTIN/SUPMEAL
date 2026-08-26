@@ -72,6 +72,10 @@ function Home() {
     const [newMessage, setNewMessage] = useState("")
     const [chatError, setChatError] = useState("")
 
+    const [importFile, setImportFile] = useState<File | null>(null)
+    const [importMessage, setImportMessage] = useState("")
+    const [importSuccess, setImportSuccess] = useState(false)
+
     const loadChatMessages = useCallback(
         async (cookbookId: number) => {
             const token = localStorage.getItem("token")
@@ -394,6 +398,14 @@ function Home() {
     }
 
     async function exportData() {
+        const confirmed = window.confirm(
+            "L'export contient vos recettes et cookbooks en clair. Continuer ?"
+        )
+
+        if (!confirmed) {
+            return
+        }
+
         const token = localStorage.getItem("token")
 
         if (!token) {
@@ -421,6 +433,59 @@ function Home() {
         link.click()
 
         window.URL.revokeObjectURL(url)
+    }
+
+    async function importData(event: SyntheticEvent<HTMLFormElement>) {
+        event.preventDefault()
+
+        if (!importFile) {
+            setImportMessage("Sélectionnez un fichier JSON")
+            setImportSuccess(false)
+            return
+        }
+
+        const token = localStorage.getItem("token")
+
+        if (!token) {
+            navigate("/login")
+            return
+        }
+
+        const form = event.currentTarget
+        const formData = new FormData()
+
+        formData.append("file", importFile)
+
+        try {
+            const response = await fetch("http://localhost:3000/import", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${token}`
+                },
+                body: formData
+            })
+
+            const data = await response.json()
+
+            if (!response.ok) {
+                setImportMessage(data.message)
+                setImportSuccess(false)
+                return
+            }
+
+            setImportMessage(
+                `Import terminé : ${data.personalRecipes} recette(s) personnelle(s), ${data.cookbooks} cookbook(s) et ${data.cookbookRecipes} recette(s) de cookbook.`
+            )
+
+            setImportSuccess(true)
+            setImportFile(null)
+            form.reset()
+
+            setCookbooks(await fetchCookbooks(token))
+        } catch {
+            setImportMessage("Impossible d'importer le fichier")
+            setImportSuccess(false)
+        }
     }
 
 
@@ -524,6 +589,44 @@ function Home() {
                     )}
                 </section>
             </div>
+
+            <section className="import-panel">
+                <h2>Importer des données</h2>
+
+                <p>
+                    Importer un fichier JSON précédemment exporté depuis SUPMEAL.
+                </p>
+
+                <form className="import-form" onSubmit={importData}>
+                    <label htmlFor="import-file">Fichier JSON</label>
+
+                    <input
+                        id="import-file"
+                        type="file"
+                        accept=".json,application/json"
+                        onChange={(event) =>
+                            setImportFile(event.target.files?.[0] || null)
+                        }
+                        required
+                    />
+
+                    <button type="submit">
+                        Importer
+                    </button>
+                </form>
+
+                {importMessage && (
+                    <p
+                        className={
+                            importSuccess
+                                ? "success-message"
+                                : "error-message"
+                        }
+                    >
+                        {importMessage}
+                    </p>
+                )}
+            </section>
 
             {selectedCookbook && (
                 <section className="members-panel">

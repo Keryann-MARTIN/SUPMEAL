@@ -10,6 +10,7 @@ const authRoutes = require("./routes/auth")
 const cookbookRoutes = require("./routes/cookbooks")
 const recipeRoutes = require("./routes/recipes")
 const exportRoutes = require("./routes/export")
+const importRoutes = require("./routes/import")
 
 const app = express()
 const port = process.env.PORT || 3000
@@ -31,6 +32,7 @@ app.use("/auth", authRoutes)
 app.use("/cookbooks", cookbookRoutes)
 app.use("/recipes", recipeRoutes)
 app.use("/export", exportRoutes)
+app.use("/import", importRoutes)
 
 app.get("/", (req, res) => {
     res.json({ message: "API SUPMEAL" })
