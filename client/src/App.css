@@ -591,3 +591,65 @@ button {
     flex-direction: column;
   }
 }
+
+.cookbook-page {
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 20px;
+}
+
+.cookbook-role {
+  display: inline-block;
+  margin-top: 8px;
+  font-weight: bold;
+  color: #2f855a;
+}
+
+.cookbook-search,
+.cookbook-recipes {
+  margin-top: 20px;
+  padding: 24px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.cookbook-search h2,
+.cookbook-recipes h2 {
+  margin-top: 0;
+}
+
+.cookbook-search form {
+  display: flex;
+  gap: 10px;
+}
+
+.cookbook-search input {
+  flex: 1;
+  padding: 9px;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+}
+
+.cookbook-recipe-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.cookbook-recipe-card {
+  padding: 18px;
+  border: 1px solid #dddddd;
+  border-radius: 6px;
+}
+
+.cookbook-recipe-card h3 {
+  margin-top: 0;
+}
+
+@media (max-width: 700px) {
+  .cookbook-search form {
+    flex-direction: column;
+  }
+}

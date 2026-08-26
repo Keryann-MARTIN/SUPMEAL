@@ -567,6 +567,13 @@ function Home() {
                                         <span>{cookbook.role}</span>
 
                                         <div className="cookbook-buttons">
+                                            <Link
+                                                className="button-link"
+                                                to={`/cookbooks/${cookbook.id}`}
+                                            >
+                                                Ouvrir
+                                            </Link>
+
                                             <button
                                                 type="button"
                                                 onClick={() => loadMembers(cookbook)}
