@@ -511,6 +511,13 @@ function Home() {
                         Recettes
                     </Link>
 
+                    <Link
+                        className="button-link secondary-button"
+                        to="/settings"
+                    >
+                        Paramètres
+                    </Link>
+
                     <button
                         type="button"
                         className="secondary-button"
@@ -518,6 +525,8 @@ function Home() {
                     >
                         Exporter
                     </button>
+
+
 
                     <button onClick={logout}>Se déconnecter</button>
                 </div>

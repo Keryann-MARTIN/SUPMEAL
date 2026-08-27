@@ -4,6 +4,7 @@ import Login from "./pages/Login"
 import Register from "./pages/Register"
 import Recipes from "./pages/Recipes"
 import Cookbook from "./pages/Cookbook"
+import Settings from "./pages/Settings"
 import "./App.css"
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
         <Route path="/cookbooks/:id" element={<Cookbook />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/settings" element={<Settings />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>

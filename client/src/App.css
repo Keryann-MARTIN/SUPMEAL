@@ -653,3 +653,39 @@ button {
     flex-direction: column;
   }
 }
+
+.settings-page {
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 32px 20px;
+}
+
+.settings-panel {
+  margin-top: 20px;
+  padding: 24px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.settings-panel h2 {
+  margin-top: 0;
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-form input {
+  margin-bottom: 8px;
+  padding: 9px;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+}
+
+.settings-form button {
+  align-self: flex-start;
+}

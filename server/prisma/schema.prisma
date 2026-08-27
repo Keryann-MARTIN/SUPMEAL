@@ -19,6 +19,10 @@ model User {
   name                String
   email               String           @unique
   passwordHash        String
+  diet                String?
+  allergies           String[]
+  favoriteCuisine     String?
+  defaultServings     Int              @default(1)
   cookbookMemberships CookbookMember[]
   recipes             Recipe[]
   comments            Comment[]
