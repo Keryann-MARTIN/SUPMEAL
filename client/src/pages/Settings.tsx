@@ -20,6 +20,9 @@ function Settings() {
     const [preferencesMessage, setPreferencesMessage] = useState("")
     const [preferencesSuccess, setPreferencesSuccess] = useState(false)
 
+    const [githubLinked, setGithubLinked] = useState(false)
+    const [hasPassword, setHasPassword] = useState(true)
+
     useEffect(() => {
         const token = localStorage.getItem("token")
 
@@ -47,6 +50,9 @@ function Settings() {
             setAllergies(user.allergies?.join(", ") || "")
             setFavoriteCuisine(user.favoriteCuisine || "")
             setDefaultServings(String(user.defaultServings || 1))
+
+            setGithubLinked(Boolean(user.githubId))
+            setHasPassword(Boolean(user.hasPassword))
         }
 
         loadSettings(token)
@@ -226,70 +232,105 @@ function Settings() {
             </section>
 
             <section className="settings-panel">
-                <h2>Changer le mot de passe</h2>
+                <h2>Connexion OAuth2</h2>
 
-                <form className="settings-form" onSubmit={changePassword}>
-                    <label htmlFor="current-password">
-                        Mot de passe actuel
-                    </label>
-
-                    <input
-                        id="current-password"
-                        type="password"
-                        value={currentPassword}
-                        onChange={(event) =>
-                            setCurrentPassword(event.target.value)
-                        }
-                        required
-                    />
-
-                    <label htmlFor="new-password">
-                        Nouveau mot de passe
-                    </label>
-
-                    <input
-                        id="new-password"
-                        type="password"
-                        minLength={6}
-                        value={newPassword}
-                        onChange={(event) =>
-                            setNewPassword(event.target.value)
-                        }
-                        required
-                    />
-
-                    <label htmlFor="confirm-password">
-                        Confirmer le nouveau mot de passe
-                    </label>
-
-                    <input
-                        id="confirm-password"
-                        type="password"
-                        minLength={6}
-                        value={confirmPassword}
-                        onChange={(event) =>
-                            setConfirmPassword(event.target.value)
-                        }
-                        required
-                    />
-
-                    <button type="submit">
-                        Modifier le mot de passe
-                    </button>
-                </form>
-
-                {passwordMessage && (
-                    <p
-                        className={
-                            passwordSuccess
-                                ? "success-message"
-                                : "error-message"
-                        }
-                    >
-                        {passwordMessage}
+                {githubLinked ? (
+                    <p className="success-message">
+                        Compte GitHub associé
                     </p>
+                ) : (
+                    <>
+                        <p>
+                            Vous pouvez associer votre compte SUPMEAL à GitHub
+                            et utiliser GitHub pour vous connecter.
+                        </p>
+
+                        <a
+                            className="button-link github-button"
+                            href="http://localhost:3000/auth/github"
+                        >
+                            Associer mon compte GitHub
+                        </a>
+                    </>
                 )}
             </section>
+
+            {hasPassword ? (
+                <section className="settings-panel">
+                    <h2>Changer le mot de passe</h2>
+
+                    <form className="settings-form" onSubmit={changePassword}>
+                        <label htmlFor="current-password">
+                            Mot de passe actuel
+                        </label>
+
+                        <input
+                            id="current-password"
+                            type="password"
+                            value={currentPassword}
+                            onChange={(event) =>
+                                setCurrentPassword(event.target.value)
+                            }
+                            required
+                        />
+
+                        <label htmlFor="new-password">
+                            Nouveau mot de passe
+                        </label>
+
+                        <input
+                            id="new-password"
+                            type="password"
+                            minLength={6}
+                            value={newPassword}
+                            onChange={(event) =>
+                                setNewPassword(event.target.value)
+                            }
+                            required
+                        />
+
+                        <label htmlFor="confirm-password">
+                            Confirmer le nouveau mot de passe
+                        </label>
+
+                        <input
+                            id="confirm-password"
+                            type="password"
+                            minLength={6}
+                            value={confirmPassword}
+                            onChange={(event) =>
+                                setConfirmPassword(event.target.value)
+                            }
+                            required
+                        />
+
+                        <button type="submit">
+                            Modifier le mot de passe
+                        </button>
+                    </form>
+
+                    {passwordMessage && (
+                        <p
+                            className={
+                                passwordSuccess
+                                    ? "success-message"
+                                    : "error-message"
+                            }
+                        >
+                            {passwordMessage}
+                        </p>
+                    )}
+                </section>
+            ) : (
+                <section className="settings-panel">
+                    <h2>Mot de passe</h2>
+
+                    <p>
+                        Ce compte utilise GitHub pour se connecter et ne possède
+                        pas de mot de passe SUPMEAL.
+                    </p>
+                </section>
+            )}
         </main>
     )
 }

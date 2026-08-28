@@ -689,3 +689,23 @@ button {
 .settings-form button {
   align-self: flex-start;
 }
+
+.oauth-section {
+  width: 100%;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #dddddd;
+  text-align: center;
+}
+
+.oauth-section p {
+  margin: 0 0 10px;
+  color: #666666;
+}
+
+.oauth-section .github-button {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+}

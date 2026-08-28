@@ -57,12 +57,32 @@ function Login() {
                     required
                 />
 
-                {message && <p className="error-message">{message}</p>}
+                {message && (
+                    <p className="error-message">
+                        {message}
+                    </p>
+                )}
 
-                <button type="submit">Se connecter</button>
+                <button type="submit">
+                    Se connecter
+                </button>
+
+                <div className="oauth-section">
+                    <p>ou</p>
+
+                    <a
+                        className="button-link github-button"
+                        href="http://localhost:3000/auth/github"
+                    >
+                        Se connecter avec GitHub
+                    </a>
+                </div>
 
                 <p>
-                    Pas encore inscrit ? <Link to="/register">Créer un compte</Link>
+                    Pas encore inscrit ?{" "}
+                    <Link to="/register">
+                        Créer un compte
+                    </Link>
                 </p>
             </form>
         </main>
