@@ -294,9 +294,6 @@ router.patch("/:id", auth, async (req, res) => {
         if (servings !== undefined) {
             data.servings = Number(servings)
         }
-        if (title !== undefined && title.trim()) {
-            data.title = title.trim()
-        }
 
         if (ingredients !== undefined && ingredients.length > 0) {
             data.ingredients = ingredients
@@ -304,18 +301,6 @@ router.patch("/:id", auth, async (req, res) => {
 
         if (steps !== undefined && steps.length > 0) {
             data.steps = steps
-        }
-
-        if (prepTime !== undefined) {
-            data.prepTime = Number(prepTime)
-        }
-
-        if (cookTime !== undefined) {
-            data.cookTime = Number(cookTime)
-        }
-
-        if (servings !== undefined) {
-            data.servings = Number(servings)
         }
 
         if (tags !== undefined) {
